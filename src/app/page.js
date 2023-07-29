@@ -1,4 +1,6 @@
 "use client";
+import punycode from "punycode";
+
 import { useState, useEffect } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "next/link";
@@ -32,7 +34,15 @@ export default function Home() {
 
 				const data = await getItems(policyId);
 				const newAssets = data.tokens;
+
+				let punycodeHandles = [];
 				const newAssetNames = newAssets.map((asset) => asset.display_name);
+				console.log(
+					punycodeHandles.length > 0
+						? punycodeHandles
+						: "no new handles found"
+				);
+
 				const newHandles = newAssets.filter(
 					(asset) => !previousAssetNames.includes(asset.display_name)
 				);
@@ -44,7 +54,7 @@ export default function Home() {
 							: newHandles.length === 0 ||
 							  newHandles.length === undefined
 							? "No new handles listed"
-							: "New handle listed! " + newHandles[0].display_name;
+							: "New handle listed!";
 					console.log(message, newHandles);
 					handleNotificationClick(message, newHandles);
 				}
@@ -58,7 +68,7 @@ export default function Home() {
 			}
 		};
 
-		const intervalId = setInterval(fetchData, 8000);
+		const intervalId = setInterval(fetchData, 15000);
 		return () => clearInterval(intervalId);
 	}, [previousAssetNames]);
 
@@ -77,6 +87,7 @@ export default function Home() {
 		const urls = newAssets.map(
 			(asset) => `https://www.jpg.store/asset/${asset.asset_id}`
 		);
+		const saleUrl = urls[0];
 		showNotification(title, {
 			body: adaHandles.join(", "),
 			onClick: () => {
@@ -88,7 +99,7 @@ export default function Home() {
 	const skeletonLoaders = Array.from({ length: 10 }, (_, index) => (
 		<div
 			key={index}
-			className="w-96 h-10 bg-gradient-to-r from-purple-500 to-orange-500 rounded-lg shadow-md animate-pulse"
+			className="w-96 h-10 bg-gradient-to-r from-purple-600 to-fuchsia-950 rounded-lg shadow-md animate-pulse"
 		/>
 	));
 
@@ -96,20 +107,20 @@ export default function Home() {
 		<div className="flex flex-col items-center space-y-2 mt-2">
 			<form
 				onSubmit={handleFormSubmit}
-				className="flex flex-col items-center space-y-2 border-2 border-slate-50 border-opacity-50 rounded-lg shadow-md p-4 hover:border-opacity-100"
+				className="flex flex-col items-center space-y-2 border-2 border-slate-50 border-opacity-50 rounded-lg shadow-md p-4 bg-gray-900"
 			>
 				<h1>
-					<span className="font-bold  text-4xl text-purple-900">
-						JPG.STORE NOTIFICATIONS
+					<span className="font-bold  text-4xl text-green-600">
+						JPG.STORE LISTINGS NOTIFIER
 					</span>
 				</h1>
 				<label
 					htmlFor="policyId"
-					className="text-slate-50 font-bold border-b-2 border-slate-50 border-opacity-50"
+					className="text-green-500 font-bold border-b-2 border-slate-50 border-opacity-50"
 				>
 					Project:{" "}
 					<Link
-						className="text-slate-50 font-bold"
+						className="text-purple-500 hover:text-blue-600 transition-colors duration-220 font-sans font-semibold"
 						href={`https://www.jpg.store/collection/${projectName}`}
 						target="_blank"
 					>
@@ -120,20 +131,20 @@ export default function Home() {
 					id="policyId"
 					name="policyId"
 					type="text"
-					className="w-96 h-10 px-4 py-2 rounded-lg shadow-md text-slate-300"
+					className="w-full h-8 px-4 py-2 rounded-lg shadow-md text-green-500 border-l-neutral-900 font-bold bg-slate-950"
 					defaultValue={policyId}
 				/>
 				<Button variant="outlined" type="submit" color="secondary">
 					{isLoading ? (
 						<CircularProgress
-							size={20}
+							size={25}
 							sx={{
 								color: "#f3f3f3",
 							}}
 							draggable={false}
 						/>
 					) : (
-						<div className=" hover:text-green-500 text-purple-500">
+						<div className=" hover:text-green-500 text-green-500">
 							<span>Set Policy ID</span> <span>&#x2713;</span>
 						</div>
 					)}
@@ -142,21 +153,29 @@ export default function Home() {
 			{isLoading ? skeletonLoaders : ""}
 
 			{assets && (
-				<div className="grid sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 mt-2">
+				<div className="grid sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 mt-2 ">
 					{assets.map((asset) => (
 						<div
 							key={asset.asset_id}
-							className="flex bg-gradient-to-r from-purple-500 to-orange-500 pl-2 rounded-lg shadow-md h-30 w-screen sm:w-96 md:w-96 lg:w-96 xl:w-96"
+							className="flex bg-gradient-to-r from-purple-600 to-fuchsia-950 rounded-lg shadow-md h-30 sm:w-1200 md:w-1200 lg:w-96 xl:w-1200 mx-4 pl-8"
 						>
-							<div className="flex items-center justify-start w-full">
+							<div className="flex items-center justify-start w-full pr-20">
 								{/* Use justify-start here */}
 								<span className="text-xl text-slate-900 font-bold">
-									{asset.display_name}
+									{asset.display_name.startsWith("$xn--") ? (
+										<span className="text-2xl text-slate-900 font-bold">
+											{punycode.decode(
+												asset.display_name.substring(5)
+											)}
+										</span>
+									) : (
+										asset.display_name
+									)}
 								</span>
 								{/* <span className="uppercase text-xs text-slate-900">
             {asset.traits.length ? asset.traits.length + " CHARS" : ""}
           </span> */}
-								<span className="flex justify-end uppercase text-xs bg-slate-900 px-1 py-1 ml-1 text-slate-100 font-bold rounded-md">
+								<span className="flex justify-end uppercase text-xs bg-slate-900 px-1 py-1 ml-1 text-green-300 font-bold rounded-md">
 									₳
 									{(
 										asset.listing_lovelace / 1000000
